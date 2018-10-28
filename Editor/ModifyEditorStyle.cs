@@ -1,14 +1,50 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System;
 
 public class ModifyEditorStyle
 {
-       
-    private static int fontSize = 11;
-    private static int selected = 0;
-    private static string[] fonts;
+    private const string defaultFont =
+#if UNITY_EDITOR_WIN
+    "Segoe UI";
+#else
+    "Lucida Grande";
+#endif
+
+    private static int fontSize
+    {
+        get{
+            return EditorPrefs.GetInt("ModifyEditorStyle_FontSize",11);
+        }
+        set{
+            EditorPrefs.SetInt("ModifyEditorStyle_FontSize",value);
+        }
+    }
+
+    private static int selected
+    {
+        get{
+            string fontName = EditorPrefs.GetString("ModifyEditorStyle_Selected", defaultFont);
+            return Array.IndexOf(fonts, fontName);
+        }
+        set{
+            EditorPrefs.SetString("ModifyEditorStyle_Selected", (value < fonts.Length && value >= 0) ? fonts[value] : defaultFont);
+        }
+    }
+
+    private static string[] _fonts;
+    private static string[] fonts
+    {
+        get{
+            if(_fonts == null)
+            {
+                _fonts = Font.GetOSInstalledFontNames();
+            }
+            return _fonts;
+        }
+    }
 
     /// You can comment out what you don't wanna change
     private static IEnumerable<GUIStyle> EditorStylesGUIStyles
@@ -102,41 +138,60 @@ public class ModifyEditorStyle
 #endif
     static void ModifyEditorStylePreference()
     {
-        if (fonts == null)
-        {
-            fonts = Font.GetOSInstalledFontNames();
-        }
-
         EditorGUILayout.HelpBox("Changing the font size works but unfortunately the line height used in various drawers is baked as a const 16, we could not change it as a const was baked throughout the compiled Unity source code, the enlarged font will clip. The default seems to be 11, I found that going to 13 is still readable if that helps with your eye condition for the time being. (It clips characters with hanging part like 'g') Some part seems to not change immediately until you recompile something.", MessageType.Info);
 
         selected = EditorGUILayout.Popup("Font", selected, fonts);
         fontSize = EditorGUILayout.IntField("Font Size", fontSize);
         if (GUILayout.Button("Modify"))
         {
-            GUISkin skin = GUI.skin;
-            Font changeToFont = Font.CreateDynamicFontFromOSFont(fonts[selected], fontSize);
+            Modify();
+        }
+    }
 
-            foreach (var x in EditorStylesGUIStyles)
-            {
-                if (x != null)
-                {
-                    x.font = changeToFont;
-                }
-            }
-            foreach (var x in InternalStyles)
-            {
-                if(x != null)
-                {
-                    x.font = changeToFont;
-                }
-            }
+    static void Modify()
+    {
+        GUISkin skin = GUI.skin;
+        string font = selected >= 0 && selected < fonts.Length ? fonts[selected] : defaultFont;
+        Font changeToFont = Font.CreateDynamicFontFromOSFont(font, fontSize);
 
-            skin.font = changeToFont;
-            skin.label.font = changeToFont;
-            skin.button.font = changeToFont;
-            skin.textArea.font = changeToFont;
-            skin.textField.font = changeToFont;
-            GUI.skin = skin;
+        foreach (var x in EditorStylesGUIStyles)
+        {
+            if (x != null)
+            {
+                x.font = changeToFont;
+            }
+        }
+        foreach (var x in InternalStyles)
+        {
+            if (x != null)
+            {
+                x.font = changeToFont;
+            }
+        }
+
+        skin.font = changeToFont;
+        skin.label.font = changeToFont;
+        skin.button.font = changeToFont;
+        skin.textArea.font = changeToFont;
+        skin.textField.font = changeToFont;
+        GUI.skin = skin;
+        //Debug.Log($"Modified");
+    }
+
+    static void ModifyStartUp(int instanceID, Rect selectionRect)
+    {
+        Modify();
+        EditorApplication.hierarchyWindowItemOnGUI -= ModifyStartUp;
+    }
+
+    [InitializeOnLoad]
+    public class Startup
+    {
+        static Startup()
+        {
+            //Debug.Log($"STARTUP!!!");
+            EditorApplication.hierarchyWindowItemOnGUI -= ModifyStartUp;
+            EditorApplication.hierarchyWindowItemOnGUI += ModifyStartUp;
         }
     }
 }
