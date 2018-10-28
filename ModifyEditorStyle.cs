@@ -5,27 +5,7 @@ using UnityEditor;
 
 public class ModifyEditorStyle
 {
-#if UNITY_2018_3_OR_NEWER
-    private class ModifyEditorStyleProvider : SettingsProvider
-    {
-        public ModifyEditorStyleProvider(string path, SettingsScopes scopes = SettingsScopes.Any)
-        : base(path, scopes)
-        { }
-
-        public override void OnGUI(string searchContext)
-        {
-            ModifyEditorStylePreference();
-        }
-    }
-
-    [SettingsProvider]
-    static SettingsProvider ModifyEditorStyleSettingsProvider()
-    {
-        return new ModifyEditorStyleProvider("Preferences/Modify Editor Style");
-    }
-#else
-    [PreferenceItem("Modify Editor Style")]
-#endif
+       
     private static int fontSize = 11;
     private static int selected = 0;
     private static string[] fonts;
@@ -91,7 +71,28 @@ public class ModifyEditorStyle
             yield return GUI.skin.FindStyle("TV Selection");
         }
     }
+    
+#if UNITY_2018_3_OR_NEWER
+    private class ModifyEditorStyleProvider : SettingsProvider
+    {
+        public ModifyEditorStyleProvider(string path, SettingsScopes scopes = SettingsScopes.Any)
+        : base(path, scopes)
+        { }
 
+        public override void OnGUI(string searchContext)
+        {
+            ModifyEditorStylePreference();
+        }
+    }
+
+    [SettingsProvider]
+    static SettingsProvider ModifyEditorStyleSettingsProvider()
+    {
+        return new ModifyEditorStyleProvider("Preferences/Modify Editor Style");
+    }
+#else
+    [PreferenceItem("Modify Editor Style")]
+#endif
     static void ModifyEditorStylePreference()
     {
         if (fonts == null)
