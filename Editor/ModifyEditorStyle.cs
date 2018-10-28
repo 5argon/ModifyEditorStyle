@@ -30,7 +30,6 @@ public class ModifyEditorStyle
             yield return EditorStyles.miniButtonMid;
             yield return EditorStyles.miniButtonRight;
             yield return EditorStyles.miniLabel;
-            yield return EditorStyles.miniPullDown;
             yield return EditorStyles.miniTextField;
             yield return EditorStyles.numberField;
             yield return EditorStyles.objectField;
@@ -53,6 +52,9 @@ public class ModifyEditorStyle
             yield return EditorStyles.whiteMiniLabel;
             yield return EditorStyles.wordWrappedLabel;
             yield return EditorStyles.wordWrappedMiniLabel;
+
+            //Not available in 2017.1.5f1 but available in 2018.3, not sure when was it added.
+            //yield return EditorStyles.miniPullDown;
         }
     }
 
@@ -62,13 +64,18 @@ public class ModifyEditorStyle
         get
         {
             yield return GUI.skin.FindStyle("TV Line");
-            yield return GUI.skin.FindStyle("TV Line");
             yield return GUI.skin.FindStyle("TV Insertion");
             yield return GUI.skin.FindStyle("TV Ping");
             yield return GUI.skin.FindStyle("ToolbarButton");
             yield return GUI.skin.FindStyle("TV Line");
             yield return GUI.skin.FindStyle("TV LineBold");
             yield return GUI.skin.FindStyle("TV Selection");
+
+            //Styles in older version
+            yield return GUI.skin.FindStyle("IN Foldout");
+            yield return GUI.skin.FindStyle("PR Insertion");
+            yield return GUI.skin.FindStyle("PR Label");
+
         }
     }
     
@@ -111,11 +118,17 @@ public class ModifyEditorStyle
 
             foreach (var x in EditorStylesGUIStyles)
             {
-                x.font = changeToFont;
+                if (x != null)
+                {
+                    x.font = changeToFont;
+                }
             }
             foreach (var x in InternalStyles)
             {
-                x.font = changeToFont;
+                if(x != null)
+                {
+                    x.font = changeToFont;
+                }
             }
 
             skin.font = changeToFont;
