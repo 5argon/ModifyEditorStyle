@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using System;
 using System.Reflection;
+using RotaryHeart.Lib;
 
 public class ModifyEditorStyle
 {
@@ -18,91 +19,106 @@ public class ModifyEditorStyle
 
     private static bool enable
     {
-        get{
-            return EditorPrefs.GetBool("ModifyEditorStyle_Enable",true);
+        get
+        {
+            return EditorPrefs.GetBool("ModifyEditorStyle_Enable", true);
         }
-        set{
-            EditorPrefs.SetBool("ModifyEditorStyle_Enable",value);
+        set
+        {
+            EditorPrefs.SetBool("ModifyEditorStyle_Enable", value);
         }
     }
 
     private static int fontSize
     {
-        get{
-            return EditorPrefs.GetInt("ModifyEditorStyle_FontSize",11);
+        get
+        {
+            return EditorPrefs.GetInt("ModifyEditorStyle_FontSize", 11);
         }
-        set{
-            EditorPrefs.SetInt("ModifyEditorStyle_FontSize",value);
-        }
-    }
-
-    private static int smallFontSize 
-    {
-        get{
-            return EditorPrefs.GetInt("ModifyEditorStyle_SmallFontSize",9);
-        }
-        set{
-            EditorPrefs.SetInt("ModifyEditorStyle_SmallFontSize",value);
+        set
+        {
+            EditorPrefs.SetInt("ModifyEditorStyle_FontSize", value);
         }
     }
 
-    private static int bigFontSize 
+    private static int smallFontSize
     {
-        get{
-            return EditorPrefs.GetInt("ModifyEditorStyle_BigFontSize",12);
+        get
+        {
+            return EditorPrefs.GetInt("ModifyEditorStyle_SmallFontSize", 9);
         }
-        set{
-            EditorPrefs.SetInt("ModifyEditorStyle_BigFontSize",value);
+        set
+        {
+            EditorPrefs.SetInt("ModifyEditorStyle_SmallFontSize", value);
+        }
+    }
+
+    private static int bigFontSize
+    {
+        get
+        {
+            return EditorPrefs.GetInt("ModifyEditorStyle_BigFontSize", 12);
+        }
+        set
+        {
+            EditorPrefs.SetInt("ModifyEditorStyle_BigFontSize", value);
         }
     }
 
     private static int paddingTop
     {
-        get{
-            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingTop",1);
+        get
+        {
+            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingTop", 1);
         }
-        set{
-            EditorPrefs.SetInt("ModifyEditorStyle_PaddingTop",value);
+        set
+        {
+            EditorPrefs.SetInt("ModifyEditorStyle_PaddingTop", value);
         }
     }
 
     private static int paddingBottom
     {
-        get{
-            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingBottom",2);
+        get
+        {
+            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingBottom", 2);
         }
-        set{
-            EditorPrefs.SetInt("ModifyEditorStyle_PaddingBottom",value);
-        }
-    }
-
-    private static int selected
-    {
-        get{
-            string fontName = EditorPrefs.GetString("ModifyEditorStyle_Selected", defaultFont);
-            return Array.IndexOf(fonts, fontName);
-        }
-        set{
-            EditorPrefs.SetString("ModifyEditorStyle_Selected", (value < fonts.Length && value >= 0) ? fonts[value] : defaultFont);
+        set
+        {
+            EditorPrefs.SetInt("ModifyEditorStyle_PaddingBottom", value);
         }
     }
 
-    private static int selectedBold
+    private static string selected
     {
-        get{
-            string fontName = EditorPrefs.GetString("ModifyEditorStyle_SelectedBold", defaultFont);
-            return Array.IndexOf(fonts, fontName);
+        get
+        {
+            return EditorPrefs.GetString("ModifyEditorStyle_Selected", defaultFont);
         }
-        set{
-            EditorPrefs.SetString("ModifyEditorStyle_SelectedBold", (value < fonts.Length && value >= 0) ? fonts[value] : defaultFont);
+        set
+        {
+            EditorPrefs.SetString("ModifyEditorStyle_Selected", string.IsNullOrEmpty(value) ? defaultFont : value);
+        }
+    }
+
+    private static string selectedBold
+    {
+        get
+        {
+            return EditorPrefs.GetString("ModifyEditorStyle_SelectedBold", defaultFont);
+        }
+        set
+        {
+            EditorPrefs.SetString("ModifyEditorStyle_SelectedBold", string.IsNullOrEmpty(value) ? defaultFont : value);
         }
     }
 
     private static string[] _fonts;
     private static string[] fonts
     {
-        get{
-            if(_fonts == null)
+        get
+        {
+            if (_fonts == null)
             {
                 _fonts = Font.GetOSInstalledFontNames();
             }
@@ -110,7 +126,7 @@ public class ModifyEditorStyle
         }
     }
 
-    private static IEnumerable<GUIStyle> GUISkinStyles 
+    private static IEnumerable<GUIStyle> GUISkinStyles
     {
         get
         {
@@ -145,7 +161,8 @@ public class ModifyEditorStyle
 
     private static IEnumerable<GUIStyle> NeedPadding
     {
-        get{
+        get
+        {
             GUISkin skin = GUI.skin;
             yield return skin.label;
             yield return skin.textArea;
@@ -243,7 +260,7 @@ public class ModifyEditorStyle
 
         }
     }
-    
+
 #if UNITY_2018_3_OR_NEWER
     private class ModifyEditorStyleProvider : SettingsProvider
     {
@@ -271,8 +288,39 @@ public class ModifyEditorStyle
 
         enable = EditorGUILayout.BeginToggleGroup("Enable", enable);
 
-        selected = EditorGUILayout.Popup("Font", selected, fonts);
-        selectedBold = EditorGUILayout.Popup("Bold Font", selectedBold, fonts);
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PrefixLabel("Font");
+        if (EditorGUILayout.DropdownButton(new GUIContent(selected), FocusType.Keyboard))
+        {
+            LabelWindow window = new LabelWindow();
+            window.OnSelect = (string value, bool enabled) =>
+            {
+                if (enabled)
+                    selected = value;
+                else
+                    selected = null;
+            };
+            window.OpenLabelWindow(new Rect(Event.current.mousePosition, Vector2.one), fonts, new string[] { selected }, false, false, true, false);
+        }
+        EditorGUILayout.EndHorizontal();
+
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PrefixLabel("Bold Font");
+        if (EditorGUILayout.DropdownButton(new GUIContent(selectedBold), FocusType.Keyboard))
+        {
+            LabelWindow window = new LabelWindow();
+            window.OnSelect = (string value, bool enabled) =>
+            {
+                if (enabled)
+                    selectedBold = value;
+                else
+                    selectedBold = null;
+            };
+            window.OpenLabelWindow(new Rect(Event.current.mousePosition, Vector2.one), fonts, new string[] { selectedBold }, false, false, true, false);
+        }
+        EditorGUILayout.EndHorizontal();
+
         EditorGUILayout.Space();
         fontSize = EditorGUILayout.IntField("Font Size", fontSize);
         smallFontSize = EditorGUILayout.IntField("Small Font Size", smallFontSize);
@@ -299,16 +347,14 @@ public class ModifyEditorStyle
 
     static void Modify()
     {
-        if(!enable) return;
+        if (!enable) return;
 
-        string fontName = selected >= 0 && selected < fonts.Length ? fonts[selected] : defaultFont;
-        string boldFontName = selectedBold >= 0 && selectedBold < fonts.Length ? fonts[selectedBold] : defaultFont;
 
-        normalFont = Font.CreateDynamicFontFromOSFont(fontName, fontSize);
-        //bigFont = Font.CreateDynamicFontFromOSFont(fontName, bigFontSize);
-        smallFont = Font.CreateDynamicFontFromOSFont(fontName, smallFontSize);
-        boldFont = Font.CreateDynamicFontFromOSFont(boldFontName, fontSize);
-        smallBoldFont = Font.CreateDynamicFontFromOSFont(boldFontName, smallFontSize);
+        normalFont = Font.CreateDynamicFontFromOSFont(selected, fontSize);
+        //bigFont = Font.CreateDynamicFontFromOSFont(selected, bigFontSize);
+        smallFont = Font.CreateDynamicFontFromOSFont(selected, smallFontSize);
+        boldFont = Font.CreateDynamicFontFromOSFont(selectedBold, fontSize);
+        smallBoldFont = Font.CreateDynamicFontFromOSFont(selectedBold, smallFontSize);
 
         GUISkin skin = GUI.skin;
         //Debug.Log($"- : {skin.font?.name} {skin.font?.fontSize}");
@@ -349,7 +395,7 @@ public class ModifyEditorStyle
 
         foreach (var x in NeedPadding)
         {
-            if(x != null)
+            if (x != null)
             {
                 //Debug.Log($"{x.name} -> {x.padding}");
                 var p = x.padding;
