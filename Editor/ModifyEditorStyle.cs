@@ -1,8 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using System;
+using RotaryHeart.Lib;
 
 public class ModifyEditorStyle
 {
@@ -15,30 +14,34 @@ public class ModifyEditorStyle
 
     private static int fontSize
     {
-        get{
-            return EditorPrefs.GetInt("ModifyEditorStyle_FontSize",11);
+        get
+        {
+            return EditorPrefs.GetInt("ModifyEditorStyle_FontSize", 11);
         }
-        set{
-            EditorPrefs.SetInt("ModifyEditorStyle_FontSize",value);
+        set
+        {
+            EditorPrefs.SetInt("ModifyEditorStyle_FontSize", value);
         }
     }
 
-    private static int selected
+    private static string selected
     {
-        get{
-            string fontName = EditorPrefs.GetString("ModifyEditorStyle_Selected", defaultFont);
-            return Array.IndexOf(fonts, fontName);
+        get
+        {
+            return EditorPrefs.GetString("ModifyEditorStyle_Selected", defaultFont);
         }
-        set{
-            EditorPrefs.SetString("ModifyEditorStyle_Selected", (value < fonts.Length && value >= 0) ? fonts[value] : defaultFont);
+        set
+        {
+            EditorPrefs.SetString("ModifyEditorStyle_Selected", value);
         }
     }
 
     private static string[] _fonts;
     private static string[] fonts
     {
-        get{
-            if(_fonts == null)
+        get
+        {
+            if (_fonts == null)
             {
                 _fonts = Font.GetOSInstalledFontNames();
             }
@@ -114,7 +117,7 @@ public class ModifyEditorStyle
 
         }
     }
-    
+
 #if UNITY_2018_3_OR_NEWER
     private class ModifyEditorStyleProvider : SettingsProvider
     {
@@ -140,7 +143,21 @@ public class ModifyEditorStyle
     {
         EditorGUILayout.HelpBox("Changing the font size works but unfortunately the line height used in various drawers is baked as a const 16, we could not change it as a const was baked throughout the compiled Unity source code, the enlarged font will clip. The default seems to be 11, I found that going to 13 is still readable if that helps with your eye condition for the time being. (It clips characters with hanging part like 'g') Some part seems to not change immediately until you recompile something.", MessageType.Info);
 
-        selected = EditorGUILayout.Popup("Font", selected, fonts);
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PrefixLabel("Font");
+        if (EditorGUILayout.DropdownButton(new GUIContent(selected), FocusType.Keyboard))
+        {
+            LabelWindow window = new LabelWindow();
+
+            window.OnSelect = (string val, bool enable) =>
+            {
+                selected = val;
+            };
+
+            window.OpenLabelWindow(new Rect(Event.current.mousePosition, Vector2.one), fonts, null, false, false, true, false);
+        }
+        EditorGUILayout.EndHorizontal();
+
         fontSize = EditorGUILayout.IntField("Font Size", fontSize);
         if (GUILayout.Button("Modify"))
         {
@@ -151,8 +168,7 @@ public class ModifyEditorStyle
     static void Modify()
     {
         GUISkin skin = GUI.skin;
-        string font = selected >= 0 && selected < fonts.Length ? fonts[selected] : defaultFont;
-        Font changeToFont = Font.CreateDynamicFontFromOSFont(font, fontSize);
+        Font changeToFont = Font.CreateDynamicFontFromOSFont(selected, fontSize);
 
         foreach (var x in EditorStylesGUIStyles)
         {
