@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using System;
+using System.Reflection;
 
 public class ModifyEditorStyle
 {
@@ -17,98 +18,82 @@ public class ModifyEditorStyle
 
     private static bool enable
     {
-        get
-        {
-            return EditorPrefs.GetBool("ModifyEditorStyle_Enable", true);
+        get{
+            return EditorPrefs.GetBool("ModifyEditorStyle_Enable",true);
         }
-        set
-        {
-            EditorPrefs.SetBool("ModifyEditorStyle_Enable", value);
+        set{
+            EditorPrefs.SetBool("ModifyEditorStyle_Enable",value);
         }
     }
 
     private static int fontSize
     {
-        get
-        {
-            return EditorPrefs.GetInt("ModifyEditorStyle_FontSize", 11);
+        get{
+            return EditorPrefs.GetInt("ModifyEditorStyle_FontSize",11);
         }
-        set
-        {
-            EditorPrefs.SetInt("ModifyEditorStyle_FontSize", value);
+        set{
+            EditorPrefs.SetInt("ModifyEditorStyle_FontSize",value);
         }
     }
 
-    private static int smallFontSize
+    private static int smallFontSize 
     {
-        get
-        {
-            return EditorPrefs.GetInt("ModifyEditorStyle_SmallFontSize", 9);
+        get{
+            return EditorPrefs.GetInt("ModifyEditorStyle_SmallFontSize",9);
         }
-        set
-        {
-            EditorPrefs.SetInt("ModifyEditorStyle_SmallFontSize", value);
+        set{
+            EditorPrefs.SetInt("ModifyEditorStyle_SmallFontSize",value);
         }
     }
 
-    private static int bigFontSize
+    private static int bigFontSize 
     {
-        get
-        {
-            return EditorPrefs.GetInt("ModifyEditorStyle_BigFontSize", 12);
+        get{
+            return EditorPrefs.GetInt("ModifyEditorStyle_BigFontSize",12);
         }
-        set
-        {
-            EditorPrefs.SetInt("ModifyEditorStyle_BigFontSize", value);
+        set{
+            EditorPrefs.SetInt("ModifyEditorStyle_BigFontSize",value);
         }
     }
 
     private static int paddingTop
     {
-        get
-        {
-            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingTop", 1);
+        get{
+            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingTop",1);
         }
-        set
-        {
-            EditorPrefs.SetInt("ModifyEditorStyle_PaddingTop", value);
+        set{
+            EditorPrefs.SetInt("ModifyEditorStyle_PaddingTop",value);
         }
     }
 
     private static int paddingBottom
     {
-        get
-        {
-            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingBottom", 2);
+        get{
+            return EditorPrefs.GetInt("ModifyEditorStyle_PaddingBottom",2);
         }
-        set
-        {
-            EditorPrefs.SetInt("ModifyEditorStyle_PaddingBottom", value);
+        set{
+            EditorPrefs.SetInt("ModifyEditorStyle_PaddingBottom",value);
         }
     }
 
     private static int selected
     {
-        get
-        {
+        get{
             string fontName = EditorPrefs.GetString("ModifyEditorStyle_Selected", defaultFont);
             return Array.IndexOf(fonts, fontName);
         }
-        set
-        {
+        set{
             EditorPrefs.SetString("ModifyEditorStyle_Selected", (value < fonts.Length && value >= 0) ? fonts[value] : defaultFont);
         }
     }
 
     private static int selectedBold
     {
-        get
-        {
+        get{
             string fontName = EditorPrefs.GetString("ModifyEditorStyle_SelectedBold", defaultFont);
             return Array.IndexOf(fonts, fontName);
         }
-        set
-        {
+        set{
             EditorPrefs.SetString("ModifyEditorStyle_SelectedBold", (value < fonts.Length && value >= 0) ? fonts[value] : defaultFont);
         }
     }
@@ -116,9 +101,8 @@ public class ModifyEditorStyle
     private static string[] _fonts;
     private static string[] fonts
     {
-        get
-        {
-            if (_fonts == null)
+        get{
+            if(_fonts == null)
             {
                 _fonts = Font.GetOSInstalledFontNames();
             }
@@ -126,7 +110,7 @@ public class ModifyEditorStyle
         }
     }
 
-    private static IEnumerable<GUIStyle> GUISkinStyles
+    private static IEnumerable<GUIStyle> GUISkinStyles 
     {
         get
         {
@@ -159,10 +143,9 @@ public class ModifyEditorStyle
         }
     }
 
-    private static IEnumerable<GUIStyle> NeedAscent
+    private static IEnumerable<GUIStyle> NeedPadding
     {
-        get
-        {
+        get{
             GUISkin skin = GUI.skin;
             yield return skin.label;
             yield return skin.textArea;
@@ -260,7 +243,7 @@ public class ModifyEditorStyle
 
         }
     }
-
+    
 #if UNITY_2018_3_OR_NEWER
     private class ModifyEditorStyleProvider : SettingsProvider
     {
@@ -307,54 +290,66 @@ public class ModifyEditorStyle
         EditorGUILayout.EndToggleGroup();
     }
 
+    //These statics are cleared out so often including just on loading a new scene.. it makes the linked font disappear
     private static Font normalFont;
     private static Font bigFont;
     private static Font smallFont;
     private static Font boldFont;
+    private static Font smallBoldFont;
 
     static void Modify()
     {
-        if (!enable) return;
+        if(!enable) return;
 
         string fontName = selected >= 0 && selected < fonts.Length ? fonts[selected] : defaultFont;
         string boldFontName = selectedBold >= 0 && selectedBold < fonts.Length ? fonts[selectedBold] : defaultFont;
 
-
         normalFont = Font.CreateDynamicFontFromOSFont(fontName, fontSize);
-        bigFont = Font.CreateDynamicFontFromOSFont(fontName, bigFontSize);
+        //bigFont = Font.CreateDynamicFontFromOSFont(fontName, bigFontSize);
         smallFont = Font.CreateDynamicFontFromOSFont(fontName, smallFontSize);
         boldFont = Font.CreateDynamicFontFromOSFont(boldFontName, fontSize);
+        smallBoldFont = Font.CreateDynamicFontFromOSFont(boldFontName, smallFontSize);
 
         GUISkin skin = GUI.skin;
         //Debug.Log($"- : {skin.font?.name} {skin.font?.fontSize}");
         skin.font = normalFont;
+        GUI.skin = skin; //SetDefaultFont activated on this setter
 
-        foreach (var z in GUISkinStyles)
-        {
-            //Debug.Log($"{z.name} : {z.font?.name} {z.font?.fontSize} {z.fontSize} {z.padding}");
-            z.font = normalFont;
-        }
+        //EditorStyles static was pulled from s_Current which was populated from `EditorGUIUtility.GetBuiltinSkin` which we cannot interfere.
+        //s_Current is internal and therefore we need to reflect to change the font. All other styles are accessible except the fonts.
+        var eType = typeof(EditorStyles);
+        var es = (EditorStyles)(eType.GetField("s_Current", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null));
+        eType.GetField("m_StandardFont", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(es, normalFont);
+        eType.GetField("m_BoldFont", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(es, boldFont);
+        eType.GetField("m_MiniFont", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(es, smallFont);
+        eType.GetField("m_MiniBoldFont", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(es, smallBoldFont);
 
-        foreach (var x in EditorStylesGUIStyles)
-        {
-            if (x != null)
-            {
-                // if(x.font != null)
-                // {
-                //     Debug.Log($"{x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
-                // }
-                // else
-                // {
-                //     Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
-                // }
-                x.font = normalFont;
-                //x.padding = new RectOffset(0,0,ascent,0);
-            }
-        }
+        //We should not override font where there's no font in the first place, because that will make the fallback switch
+        //to bold on override not working.
 
-        foreach (var x in NeedAscent)
+        // foreach (var z in GUISkinStyles)
+        // {
+        //     Debug.Log($"{z.name} : {z.font?.name} {z.font?.fontSize} {z.fontSize} {z.padding}");
+        // }
+
+        // foreach (var x in EditorStylesGUIStyles)
+        // {
+        //     if (x != null)
+        //     {
+        //         if(x.font != null)
+        //         {
+        //             Debug.Log($"{x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
+        //         }
+        //         else
+        //         {
+        //             Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
+        //         }
+        //     }
+        // }
+
+        foreach (var x in NeedPadding)
         {
-            if (x != null)
+            if(x != null)
             {
                 //Debug.Log($"{x.name} -> {x.padding}");
                 var p = x.padding;
@@ -377,8 +372,7 @@ public class ModifyEditorStyle
                 //     Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
                 // }
 
-                x.font = bigFont;
-                //x.padding = new RectOffset(0,0,ascent,0);
+                x.fontSize = bigFontSize;
             }
         }
 
@@ -388,55 +382,48 @@ public class ModifyEditorStyle
             {
                 // if(x.font != null)
                 // {
-                //     Debug.Log($"{x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
+                //     Debug.Log($"SMALL {x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
                 // }
                 // else
                 // {
-                //     Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
+                //     Debug.Log($"SMALL {x.name} : NO FONT {x.fontSize} {x.padding}");
                 // }
 
-                x.font = smallFont;
-                //x.padding = new RectOffset(0,0,ascent,0);
+                x.fontSize = smallFontSize;
             }
         }
 
-        foreach (var x in EditorStylesBold)
-        {
-            if (x != null)
-            {
-                // if(x.font != null)
-                // {
-                //     Debug.Log($"{x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
-                // }
-                // else
-                // {
-                //     Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
-                // }
+        // foreach (var x in EditorStylesBold)
+        // {
+        //     if (x != null)
+        //     {
+        //         if(x.font != null)
+        //         {
+        //             Debug.Log($"{x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
+        //         }
+        //         else
+        //         {
+        //             Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
+        //         }
+        //     }
+        // }
 
-                x.font = boldFont;
-                //x.padding = new RectOffset(0,0,ascent,0);
-            }
-        }
+        // foreach (var x in InternalStyles)
+        // {
+        //     if (x != null)
+        //     {
+        //         if(x.font != null)
+        //         {
+        //             Debug.Log($"{x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
+        //         }
+        //         else
+        //         {
+        //             Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
+        //         }
+        //     }
+        // }
 
-        foreach (var x in InternalStyles)
-        {
-            if (x != null)
-            {
-                // if(x.font != null)
-                // {
-                //     Debug.Log($"{x.name} : {x.font.name} {x.font.fontSize} {x.fontSize} {x.padding}");
-                // }
-                // else
-                // {
-                //     Debug.Log($"{x.name} : NO FONT {x.fontSize} {x.padding}");
-                // }
-                x.font = normalFont;
-            }
-        }
-
-        GUI.skin = skin;
-
-        Debug.Log($"Modified");
+        // Debug.Log($"Modified");
     }
 
     static void ModifyStartUp(int instanceID, Rect selectionRect)
@@ -447,7 +434,8 @@ public class ModifyEditorStyle
 
     static void ModifySceneChange(Scene scene, OpenSceneMode mode)
     {
-        Modify();
+        EditorApplication.hierarchyWindowItemOnGUI -= ModifyStartUp;
+        EditorApplication.hierarchyWindowItemOnGUI += ModifyStartUp;
     }
 
     [InitializeOnLoad]
